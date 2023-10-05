@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Pong Game</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+
+        canvas {
+            background-color: green; /* Cor da quadra (tela) */
+            display: block;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="pong" width="1280" height="720"></canvas>
+    <script>
+
+        const pontoSound = new Audio('caminho/para/seu/arquivo-de-som.mp3'); // Substitua pelo caminho real do seu arquivo de som
+
+        const canvas = document.getElementById("pong");
+        const ctx = canvas.getContext("2d");
+
+        // Definir variáveis iniciais
+        let ballX = canvas.width / 2;
+        let ballY = canvas.height / 2;
+        let ballSpeedX = 8;
+        let ballSpeedY = 8;
+        const ballSize = 10;
+
+        let paddle1Y = canvas.height / 2 - 50;
+        let paddle2Y = canvas.height / 2 - 50;
+        const paddleWidth = 10;
+        const paddleHeight = 60;
+
+        let player1Score = 0;
+        let player2Score = 0;
+        const winningScore = 10;
+
+        const calculateMousePos = (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const root = document.documentElement;
+            const mouseX = e.clientX - rect.left - root.scrollLeft;
+            const mouseY = e.clientY - rect.top - root.scrollTop;
+            return mouseY;
+        };
+
+        canvas.addEventListener("mousemove", (e) => {
+            const mouseY = calculateMousePos(e);
+            paddle1Y = mouseY - paddleHeight / 2;
+        });
+
+        // Função para resetar a bola após um ponto ser marcado
+        const resetBall = () => {
+            if (player1Score >= winningScore || player2Score >= winningScore) {
+                player1Score = 0;
+                player2Score = 0;
+                pontoSound.play(); // Reproduz o som quando um ponto é marcado
+            }
+
+            ballX = canvas.width / 2;
+            ballY = canvas.height / 2;
+            ballSpeedX = -ballSpeedX;
+        };
+
+        // Função principal de desenho
+        const draw = () => {
+            // Limpar o canvas
+            ctx.fillStyle = "green"; /* Cor da quadra (tela) */
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Desenhar a rede
+            for (let i = 0; i < canvas.height; i += 40) {
+                ctx.fillStyle = "white";
+                ctx.fillRect(canvas.width / 2 - 1, i, 2, 20);
+            }
+
+            // Desenhar a bola
+            ctx.fillStyle = "white"; /* Cor da bola */
+            ctx.beginPath();
+            ctx.arc(ballX, ballY, ballSize, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Desenhar as paletas dos jogadores
+            ctx.fillStyle = "white";
+            ctx.fillRect(0, paddle1Y, paddleWidth, paddleHeight);
+            ctx.fillRect(canvas.width - paddleWidth, paddle2Y, paddleWidth, paddleHeight);
+
+            // Escreve os pontos dos jogadores
+            ctx.font = "45px Arial";
+            ctx.fillStyle = 'yellow'
+            ctx.fillText(player1Score, 100, 50);
+            ctx.fillText(player2Score, canvas.width - 100, 50);
+        };
+
+        // Atualização da posição da bola e colisões
+        const update = () => {
+            ballX += ballSpeedX;
+            ballY += ballSpeedY;
+
+            // Colisão com as bordas superiores e inferiores
+            if (ballY < 0 || ballY > canvas.height) {
+                ballSpeedY = -ballSpeedY;
+            }
+
+            // Colisão com os jogadores
+            if (
+                ballX < paddleWidth &&
+                ballY > paddle1Y &&
+                ballY < paddle1Y + paddleHeight
+            ) {
+                ballSpeedX = -ballSpeedX;
+            }
+            if (
+                ballX > canvas.width - paddleWidth &&
+                ballY > paddle2Y &&
+                ballY < paddle2Y + paddleHeight
+            ) {
+                ballSpeedX = -ballSpeedX;
+            }
+
+            // Ponto para o jogador 2
+            if (ballX < 0) {
+                player2Score++;
+                resetBall();
+            }
+
+            // Ponto para o jogador 1
+            if (ballX > canvas.width) {
+                player1Score++;
+                resetBall();
+            }
+
+            // Controla a paleta do jogador 2
+            const paddle2YCenter = paddle2Y + paddleHeight / 2;
+            if (paddle2YCenter < ballY - 35) {
+                paddle2Y += 9;
+            } else if (paddle2YCenter > ballY + 35) {
+                paddle2Y -= 9;
+            }
+        };
+
+        // Loop principal do jogo
+        const gameLoop = () => {
+            draw();
+            update();
+            requestAnimationFrame(gameLoop);
+        };
+
+        gameLoop();
+    </script>
+</body>
+</html>
